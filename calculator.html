@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Misha's Ported Calculator</title>
+    <style>
+        /* Center the calculator on the webpage background */
+        body {
+          background-color: #1c1c1c;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+          margin: 0;
+        }
+
+        /* Main calculator chassis */
+        .calculator {
+          width: 320px;
+          background-color: #000000;
+          padding: 20px;
+          border-radius: 30px;
+          box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Digital readout screen */
+        .display {
+          color: #ffffff;
+          font-size: 4.5rem;
+          font-weight: 300;
+          text-align: right;
+          padding: 20px 10px;
+          margin-bottom: 10px;
+          word-wrap: break-word;
+        }
+
+        /* Create a 4-column layout grid for buttons */
+        .buttons {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 12px;
+        }
+
+        /* Base style for every clickable button */
+        .btn {
+          border: none;
+          height: 70px;
+          border-radius: 50%;
+          font-size: 1.8rem;
+          cursor: pointer;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          transition: opacity 0.1s ease;
+        }
+
+        .btn:active {
+          opacity: 0.7;
+        }
+
+        /* Color palettes matching classic mobile layouts */
+        .digit {
+          background-color: #333333;
+          color: #ffffff;
+        }
+
+        .operator {
+          background-color: #ff9f0a;
+          color: #ffffff;
+          font-weight: bold;
+        }
+
+        .utility {
+          background-color: #a5a5a5;
+          color: #000000;
+        }
+
+        /* Special rule to stretch the zero key over two grid columns */
+        .zero {
+          grid-column: span 2;
+          border-radius: 35px;
+          justify-content: flex-start;
+          padding-left: 27px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="calculator">
+  <!-- The screen that displays the numbers -->
+  <div class="display" id="display">0</div>
+  
+  <!-- The grid container for all buttons -->
+  <div class="buttons">
+    <button class="btn utility" onclick="clearDisplay()">AC</button>
+    <button class="btn utility" onclick="toggleSign()">+/-</button>
+    <button class="btn utility" onclick="inputPercent()">%</button>
+    <button class="btn operator" onclick="inputOperator('/')">÷</button>
+    
+    <button class="btn digit" onclick="inputDigit('7')">7</button>
+    <button class="btn digit" onclick="inputDigit('8')">8</button>
+    <button class="btn digit" onclick="inputDigit('9')">9</button>
+    <button class="btn operator" onclick="inputOperator('*')">×</button>
+    
+    <button class="btn digit" onclick="inputDigit('4')">4</button>
+    <button class="btn digit" onclick="inputDigit('5')">5</button>
+    <button class="btn digit" onclick="inputDigit('6')">6</button>
+    <button class="btn operator" onclick="inputOperator('-')">−</button>
+    
+    <button class="btn digit" onclick="inputDigit('1')">1</button>
+    <button class="btn digit" onclick="inputDigit('2')">2</button>
+    <button class="btn digit" onclick="inputDigit('3')">3</button>
+    <button class="btn operator" onclick="inputOperator('+')">+</button>
+    
+    <!-- The zero button spans two columns visually -->
+    <button class="btn digit zero" onclick="inputDigit('0')">0</button>
+    <button class="btn digit" onclick="inputDecimal('.')">.</button>
+    <button class="btn operator" onclick="calculate()">=</button>
+  </div>
+</div>
+
+</body>
+html>
+<script>
+    // Variables to hold the calculation state
+    let displayValue = '0';
+    let firstOperand = null;
+    let waitingForSecondOperand = false;
+    let operator = null;
+
+    // Updates the text layout on the calculator screen
+    function updateDisplay() {
+        const display = document.getElementById('display');
+        display.textContent = displayValue;
+    }
+
+    // Handles number clicks (0-9)
+    function inputDigit(digit) {
+        if (waitingForSecondOperand === true) {
+            displayValue = digit;
+            waitingForSecondOperand = false;
+        } else {
+            displayValue = displayValue === '0' ? digit : displayValue + digit;
+        }
+        updateDisplay();
+    }
+
+    // Handles decimal point clicks
+    function inputDecimal(dot) {
+        if (waitingForSecondOperand === true) {
+            displayValue = "0."
+            waitingForSecondOperand = false;
+            updateDisplay();
+            return;
+        }
+        if (!displayValue.includes(dot)) {
+            displayValue += dot;
+        }
+        updateDisplay();
+    }
+
+    // Handles operational functions (+, -, ×, ÷)
+    function inputOperator(nextOperator) {
+        const inputValue = parseFloat(displayValue);
+
+        if (operator && waitingForSecondOperand)  {
+            operator = nextOperator;
+            return;
+        }
+
+        if (firstOperand === null && !isNaN(inputValue)) {
+            firstOperand = inputValue;
+        } else if (operator) {
+            const result = performCalculation[operator](firstOperand, inputValue);
+            displayValue = `${parseFloat(result.toFixed(7))}`;
+            firstOperand = result;
+        }
+
+        waitingForSecondOperand = true;
+        operator = nextOperator;
+        updateDisplay();
+    }
+
+    // Calculation logic mapping
+    const performCalculation = {
+        '/': (firstOperand, secondOperand) => firstOperand / secondOperand,
+        '*': (firstOperand, secondOperand) => firstOperand * secondOperand,
+        '-': (firstOperand, secondOperand) => firstOperand - secondOperand,
+        '+': (firstOperand, secondOperand) => firstOperand + secondOperand,
+    };
+
+    // Computes the total when the equals sign is clicked
+    function calculate() {
+        if (operator === null || waitingForSecondOperand) return;
+        
+        const inputValue = parseFloat(displayValue);
+        const result = performCalculation[operator](firstOperand, inputValue);
+        
+        displayValue = `${parseFloat(result.toFixed(7))}`;
+        firstOperand = null;
+        operator = null;
+        waitingForSecondOperand = false;
+        updateDisplay();
+    }
+
+    // Resets the interface state back to 0 (AC button)
+    function clearDisplay() {
+        displayValue = '0';
+        firstOperand = null;
+        waitingForSecondOperand = false;
+        operator = null;
+        updateDisplay();
+    }
+
+    // Converts positive numbers to negative, and vice versa (+/- button)
+    function toggleSign() {
+        displayValue = (parseFloat(displayValue) * -1).toString();
+        updateDisplay();
+    }
+
+    // Converts values into fractions of 100 (% button)
+    function inputPercent() {
+        displayValue = (parseFloat(displayValue) / 100).toString();
+        updateDisplay();
+    }
+</script>
